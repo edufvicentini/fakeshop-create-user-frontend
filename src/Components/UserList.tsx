@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { User } from "../Entities/User";
-import { useAppDispatch, useAppSelector } from "../hooks/hooks";
+import { useAppDispatch } from "../hooks/hooks";
 import { modalSlice } from "../hooks/modalSlice";
 import { editingSlice, userSlice } from "../hooks/userSlice";
 import { capitalize } from "../utils";
@@ -25,7 +25,7 @@ export function UserList() {
     )
     
     return (
-    <div className="p-12 overflow-x-auto relative">
+    <div className="px-12 pb-12 overflow-x-auto relative">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400" id='main-table'>
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
