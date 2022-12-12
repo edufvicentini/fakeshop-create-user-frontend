@@ -10,7 +10,6 @@ function App() {
     {/* <DetailModal></DetailModal> */}
       <Header />
       <MainScreen />
-      <DetailModal isOpen={false}/>
       {/* <UserList /> */}
     </>
   )

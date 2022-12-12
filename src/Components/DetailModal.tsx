@@ -15,29 +15,96 @@
 import { Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { useAppDispatch, useAppSelector } from '../hooks/hooks';
+import { modalSlice } from '../hooks/modalSlice';
+import { editingSlice, userSlice } from '../hooks/userSlice';
+import { createUser } from '../useCases/createUser';
+import { User } from '../Entities/User';
+import { updateUser } from '../useCases/updateUser';
+import { deleteUser } from '../useCases/deleteUser';
 
-function handleConfirm(e:React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    alert('Confirmed');
-}
+export function DetailModal() {
+    const isOpen = useAppSelector(state => state.modal.isOpen)
+    const selectedUser = useAppSelector(state => state.user.user)
+    const isEditing = useAppSelector(state => state.editing.isEditing)
 
-function handleDelete(e:React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    alert('Deleted');
-}
+    const [userId, setUserId] = useState<number>(0)
+    const [userFirstName, setUserFirstName] = useState<string>('')
+    const [userLastName, setUserLastName] = useState<string>('')
+    const [userUsername, setUserUsername] = useState<string>('')
+    const [userPassword, setUserPassword] = useState<string>('')
+    const [userEmail, setUserEmail] = useState<string>('')
+    const [userPhone, setUserPhone] = useState<string>('')
+    const dispatch = useAppDispatch()
 
-interface DetailModalProps {
-    isOpen: boolean;
-}
+    async function handleConfirm(e:React.MouseEvent<HTMLButtonElement>) {
+        e.preventDefault();
+        
+        const user:User = {
+            email: userEmail,
+            id: userId,
+            name: {
+                firstname: userFirstName, 
+                lastname: userLastName
+            },
+            phone: userPhone,
+            username: userUsername,
+            password: userPassword
+        }
+        try {
+        if (isEditing){
+            const response = await updateUser(user)
+            console.log(response)
+            if (response.status === 200) {
+                alert('Edited Successfully')
+            }
+        }
+        else{
+            const response = await createUser(user);
+            if (response.status === 200) {
+                alert('Created Successfully')
+            }
+        }
+        } catch (e) {
+            alert(e)
+        }
+        dispatch(modalSlice.actions.close())
+        dispatch(editingSlice.actions.clearEditing())
+        dispatch(userSlice.actions.clearSelectedUser())
+    }
+    async function handleDelete(e:React.MouseEvent<HTMLButtonElement>) {
+        e.preventDefault();
+        try {
+            const response = await deleteUser(userId)
+            if (response.status === 200) {
+                alert('Deleted Successfully')
+            }
+        } catch (e) {
+            alert(e)
+        }
+        dispatch(modalSlice.actions.close())
+        dispatch(editingSlice.actions.clearEditing())
+        dispatch(userSlice.actions.clearSelectedUser())
+    } 
 
-export function DetailModal({ isOpen }: DetailModalProps) {
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    setOpen(isOpen)
-  }, [isOpen])
+    function closeModal() {
+        dispatch(userSlice.actions.clearSelectedUser())
+        dispatch(modalSlice.actions.close())
+    }
+
+    useEffect(() => {
+        setUserId(selectedUser.id)
+        setUserFirstName(selectedUser.name.firstname)
+        setUserLastName(selectedUser.name.lastname)
+        setUserEmail(selectedUser.email)
+        setUserPhone(selectedUser.phone)
+        setUserUsername(selectedUser.username)
+        setUserPassword(selectedUser.password)
+    }, [selectedUser])
+
   return (
-    <Transition.Root show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-10" onClose={setOpen}>
+    <Transition.Root show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-10" onClose={closeModal}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -66,25 +133,43 @@ export function DetailModal({ isOpen }: DetailModalProps) {
                     <button
                     type="button"
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 sm:top-8 sm:right-6 md:top-6 md:right-6 lg:top-8 lg:right-8"
-                    onClick={() => setOpen(false)}
+                    onClick={() => closeModal()}
                     >
                     <span className="sr-only">Close</span>
                     <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
                     <div className='w-full'>
-                    <h1 className='pb-8  text-2xl font-bold leading-7 text-gray-600 sm:truncate sm:text-3xl sm:tracking-tight'>User Profile</h1>
-                        <div className="pb-6 col-span-6 sm:col-span-4">
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Username
-                            </label>
-                            
-                            <input
-                                type="text"
-                                name="username"
-                                id="username"
-                                autoComplete="username"
-                                className="p-2 block w-full flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
+                        <h1 className='pb-8  text-2xl font-bold leading-7 text-gray-600 sm:truncate sm:text-3xl sm:tracking-tight'>{isEditing ? 'Edit User' : 'Create User'}</h1>
+                        <div className='flex gap-4'>
+                            <div className="flex-1 basis-1/2 pb-6 col-span-6 sm:col-span-4">
+                                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                    Username
+                                </label>
+                                
+                                <input
+                                    type="text"
+                                    name="username"
+                                    id="username"
+                                    autoComplete="username"
+                                    value={userUsername}
+                                    onChange={(e) => setUserUsername(e.target.value)}
+                                    className="p-2 block w-full flex-1 rounded-lg border-solid border-2 border-gray-200 hover:border-gray-300 focus:border-gray-300 focus:ring-indigo-500 sm:text-sm"
+                                />
+                            </div>
+                            <div className="flex-1 basis-1/2 pb-6 col-span-6 sm:col-span-4">
+                                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="password"
+                                    autoComplete="password"
+                                    value={userPassword}
+                                    onChange={(e) => setUserPassword(e.target.value)}
+                                    className="p-2 block w-full flex-1 rounded-lg border-solid border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                />
+                            </div>
                         </div>
                         <div className="pb-8 col-span-6 sm:col-span-4">
                             <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
@@ -92,11 +177,13 @@ export function DetailModal({ isOpen }: DetailModalProps) {
                             </label>
                             
                             <input
-                                type="text"
+                                type="email"
                                 name="email-address"
                                 id="email-address"
                                 autoComplete="email-address"
-                                className="p-2 block w-full flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                value={userEmail}
+                                onChange={(e) => setUserEmail(e.target.value)}
+                                className="p-2 block w-full flex-1 rounded-lg border-solid border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             />
                         </div>
                         <div className='pb-8 flex gap-4 justify-items-stretch h-full'>
@@ -110,7 +197,9 @@ export function DetailModal({ isOpen }: DetailModalProps) {
                                     name="first-name"
                                     id="first-name"
                                     autoComplete="first-name"
-                                    className="p-2 block w-full flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    value={userFirstName}
+                                    onChange={(e) => setUserFirstName(e.target.value)}
+                                    className="p-2 block w-full flex-1 rounded-lg border-solid border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 />
                             </div> {/* First Name */}
                             <div className="flex-1 basis-1/2 col-span-6 sm:col-span-4">
@@ -123,7 +212,9 @@ export function DetailModal({ isOpen }: DetailModalProps) {
                                     name="last-name"
                                     id="last-name"
                                     autoComplete="last-name"
-                                    className="p-2 block w-full flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    value={userLastName}
+                                    onChange={(e) => setUserLastName(e.target.value)}
+                                    className="p-2 block w-full flex-1 rounded-lg border-solid border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 />
                             </div> {/* Last Name */}
                         </div> {/* First Name - Last Name group */}
@@ -136,7 +227,9 @@ export function DetailModal({ isOpen }: DetailModalProps) {
                                 name="phone"
                                 id="phone"
                                 autoComplete="phone"
-                                className="p-2 block w-full flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                value={userPhone}
+                                onChange={(e) => setUserPhone(e.target.value)}
+                                className="p-2 block w-full flex-1 rounded-lg border-solid border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             />
                         </div> {/* Last Name */}
                         <div className='flex gap-4'>
@@ -147,13 +240,13 @@ export function DetailModal({ isOpen }: DetailModalProps) {
                             >
                                 Confirm
                             </button>
-                            <button
+                            {isEditing && <button
                                 type="submit"
                                 onClick={handleDelete}
-                                className="group relative flex w-full justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                className="group relative flex w-full justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                             >
                                 Delete
-                            </button>
+                            </button> }
                         </div>
                     </div>
                 </div>
