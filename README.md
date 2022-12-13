@@ -1,5 +1,10 @@
 # FakeShop Frontend
 
+<a href="https://github.com/edufvicentini/fakeshop-create-user-frontend/blob/master/LICENSE">
+   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="fakeshop-create-user-frontend is released under the MIT license." />
+ </a>
+
+
 ## 💻 About the project
 This is a React application that implements some services and libraries like Redux for state management and FakeStoreAPI for Requests Simulation.
 
